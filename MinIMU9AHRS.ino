@@ -150,6 +150,7 @@ void setup()
   it = 0;
   print_data = false;
   Serial.begin(115200);
+  Serial2.begin(115200);
 
   _rnaControl = new RNAControl();
 
@@ -214,15 +215,15 @@ void setup()
   counter = 0;
 
   pinMode(53, OUTPUT);
-/*
+
   // Start the Arduino hardware serial port at 9600 baud
-  Serial.print("Initializing SD card...");
+  /*Serial.print("Initializing SD card...");
   if (!SD.begin(53)) {
     Serial.println("initialization failed!");
     return;
   }
-  Serial.println("initialization done.");
-  */
+  Serial.println("initialization done.");*/
+  
   // open the file. note that only one file can be open at a time,
   // so you have to close this one before opening another.
   
@@ -304,34 +305,37 @@ void loop() //Main Loop
     Serial.print(" -> AUX:  ");
     Serial.print(t_aux);*/
     
-    /*
-    myFile = SD.open("test.txt", FILE_WRITE);
+    /*myFile = SD.open("test.txt", FILE_WRITE);
     if (myFile) {
-      if(t_aux < 1500) {
-        //Serial.print("Gravando dados no SD");
-        myFile.print((int)ToDeg(roll));
-        myFile.print(", ");
-        myFile.print((int)ToDeg(pitch));
-        myFile.println(";");
-        myFile.close();
-        Serial.print(" RECORDING");
-        digitalWrite(PIN_LED_RECORD, HIGH);
-      }
-      else {
-        digitalWrite(PIN_LED_RECORD, LOW);
-      }
-
-    } else {
+      myFile.print((int)ToDeg(roll));
+      myFile.print(", ");
+      myFile.print((int)ToDeg(pitch));
+      myFile.print(", ");
+      myFile.print(t_aux);
+      myFile.println(";");
+      myFile.close();
+      digitalWrite(PIN_LED_RECORD, HIGH);
+    } 
+    else {
       digitalWrite(PIN_LED_RECORD, LOW);
       Serial.println("error opening test.txt");
-    }
+    }*/
 
     servo_aileron.write(c_aileron);
     servo_throttle.write(c_throttle);
     servo_elevator.write(c_elevator);
     servo_rudder.write(c_rudder);
-    */
+
+    
     //Serial.println("},");
+
+    String strToSend = String(ToDeg(roll)) + ", " + String(ToDeg(pitch));
+
+    //String strToSend = "alo cambio";
+    char msg[strToSend.length()] ;
+    strToSend.toCharArray(msg,strToSend.length());
+    Serial2.write(msg,strToSend.length());
+    //delay(1000);
 
     if(t_aux < 1500) {
       rna_timer_old = rna_timer;
@@ -368,6 +372,8 @@ void loop() //Main Loop
       Serial.print(" E ");
       Serial.print(cmd_elevator);
       Serial.println(" ");
+
+      
 
       servo_aileron.write(cmd_aileron);
       servo_throttle.write(cmd_throttle);
