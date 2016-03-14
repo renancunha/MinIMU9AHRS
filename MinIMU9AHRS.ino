@@ -150,7 +150,7 @@ void setup()
   it = 0;
   print_data = false;
   Serial.begin(115200);
-  Serial2.begin(115200);
+  Serial2.begin(19200);
 
   _rnaControl = new RNAControl();
 
@@ -217,17 +217,19 @@ void setup()
   pinMode(53, OUTPUT);
 
   // Start the Arduino hardware serial port at 9600 baud
-  /*Serial.print("Initializing SD card...");
+  Serial.print("Initializing SD card...");
   if (!SD.begin(53)) {
     Serial.println("initialization failed!");
     return;
   }
-  Serial.println("initialization done.");*/
+  Serial.println("initialization done.");
   
   // open the file. note that only one file can be open at a time,
   // so you have to close this one before opening another.
   
 }
+
+int radio_count = 0;
 
 void loop() //Main Loop
 {
@@ -279,7 +281,7 @@ void loop() //Main Loop
     c_rudder = c_rudder < 0 ? 0 : c_rudder;
 
     //Serial.print("{");
-    /*
+    
     Serial.print((int)ToDeg(roll));
     Serial.print(", ");
     Serial.print((int)ToDeg(pitch));
@@ -292,8 +294,8 @@ void loop() //Main Loop
     Serial.print(", ");
     Serial.print(c_elevator);
     Serial.print(", ");
-    Serial.print(c_rudder);
-    */
+    Serial.println(c_rudder);
+    
     /*Serial.print(" -> AIL:  ");
     Serial.print(t_aileron);
     Serial.print(" -> THR:  ");
@@ -326,16 +328,19 @@ void loop() //Main Loop
     servo_elevator.write(c_elevator);
     servo_rudder.write(c_rudder);
 
-    
     //Serial.println("},");
 
-    String strToSend = String(ToDeg(roll)) + ", " + String(ToDeg(pitch));
-
-    //String strToSend = "alo cambio";
-    char msg[strToSend.length()] ;
-    strToSend.toCharArray(msg,strToSend.length());
-    Serial2.write(msg,strToSend.length());
-    //delay(1000);
+    if(radio_count == 1)
+    {
+      char msg[16];
+      sprintf(msg,"%03d%03d%03d%03d%03d", (int)ToDeg(roll)+90, (int)ToDeg(pitch)+90, (int)c_aileron, (int)c_throttle, (int)c_elevator);
+      Serial2.write(msg,16);
+      radio_count = 0;
+    }
+    else
+    {
+      radio_count++;
+    }
 
     if(t_aux < 1500) {
       rna_timer_old = rna_timer;
@@ -343,8 +348,8 @@ void loop() //Main Loop
       double _roll = _map(ToDeg(roll), -90.0, 90.0, 0.0, 1.0);
       double _pitch = _map(ToDeg(pitch), -90.0, 90.0, 0.0, 1.0);
 
-     _rnaControl->setRoll(_roll);
-     _rnaControl->setPitch(_pitch);
+     _rnaControl->setRoll(_pitch);
+     _rnaControl->setPitch(_roll);
      _rnaControl->run();
      
      double aileronAngle = _rnaControl->getAileronAngle();
@@ -373,10 +378,8 @@ void loop() //Main Loop
       Serial.print(cmd_elevator);
       Serial.println(" ");
 
-      
-
       servo_aileron.write(cmd_aileron);
-      servo_throttle.write(cmd_throttle);
+      servo_throttle.write(0);
       servo_elevator.write(cmd_elevator);
       servo_rudder.write(90);
     }
@@ -395,6 +398,7 @@ double _map(double x, double in_min, double in_max, double out_min, double out_m
 {
   return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
+
 
 
 
